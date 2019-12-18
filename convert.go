@@ -53,9 +53,7 @@ func (convert *Convert) SetPackageName(name string) {
 }
 
 func (convert *Convert) Run() {
-	// 组装struct
 	for _, tableRealName := range convert.Tables {
-		// 去除前缀
 		prefix, ok := convert.TablePrefix[tableRealName]
 		if ok {
 			tableRealName = tableRealName[len(prefix):]
@@ -68,33 +66,29 @@ func (convert *Convert) Run() {
 		case 1:
 			tableName = strings.ToUpper(tableName[0:1])
 		default:
-			// 字符长度大于1时
 			tableName = strings.ToUpper(tableName[0:1]) + tableName[1:]
 		}
 		depth := 1
-		var structContent string
-		structContent += "package " + convert.PackageName + "\n\n"
-		structContent += "type " + tableName + " struct {\n"
+		var content string
+		content += "package " + convert.PackageName + "\n\n" //写包名
+		content += "type " + tableName + " struct {\n"
 		columns, ok := convert.TableColumn[tableRealName]
 		for _, v := range columns {
-			//structContent += tab(depth) + v.ColumnName + " " + v.Type + " " + v.Json + "\n"
-			// 字段注释
 			var comment string
 			if v.ColumnComment != "" {
 				comment = fmt.Sprintf(" // %s", v.ColumnComment)
 			}
-			structContent += fmt.Sprintf("%s%s %s %s%s\n",
+			content += fmt.Sprintf("%s%s %s %s%s\n",
 				Tab(depth), v.GetGoColumn(prefix, true), v.GetGoType(), v.GetTag("orm"), comment)
 		}
-		structContent += Tab(depth-1) + "}\n\n"
+		content += Tab(depth-1) + "}\n\n"
 
-		// 添加 method 获取真实表名
-		structContent += fmt.Sprintf("func (%s *%s) %s() string {\n",
+		content += fmt.Sprintf("func (%s *%s) %s() string {\n",
 			LcFirst(tableName), tableName, "GetTableName")
-		structContent += fmt.Sprintf("%sreturn \"%s\"\n",
+		content += fmt.Sprintf("%sreturn \"%s\"\n",
 			Tab(depth), tableRealName)
-		structContent += "}\n\n"
-		convert.writeModel(tableRealName, structContent)
+		content += "}\n\n"
+		convert.writeModel(tableRealName, content) //写文件
 	}
 }
 
