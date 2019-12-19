@@ -10,17 +10,17 @@ import (
 var TypeMappingMysqlToGo = map[string]string{
 	"int":                "int",
 	"integer":            "int",
-	"tinyint":            "int",
-	"smallint":           "int",
-	"mediumint":          "int",
-	"bigint":             "int",
-	"int unsigned":       "int",
-	"integer unsigned":   "int",
-	"tinyint unsigned":   "int",
-	"smallint unsigned":  "int",
-	"mediumint unsigned": "int",
-	"bigint unsigned":    "int",
-	"bit":                "int",
+	"tinyint":            "int8",
+	"smallint":           "int16",
+	"mediumint":          "int32",
+	"bigint":             "int64",
+	"int unsigned":       "uint",
+	"integer unsigned":   "uint",
+	"tinyint unsigned":   "uint8",
+	"smallint unsigned":  "uint16",
+	"mediumint unsigned": "uint32",
+	"bigint unsigned":    "uint64",
+	"bit":                "int8",
 	"bool":               "bool",
 	"enum":               "string",
 	"set":                "string",
@@ -38,11 +38,11 @@ var TypeMappingMysqlToGo = map[string]string{
 	"datetime":           "string", // time.Time
 	"timestamp":          "string", // time.Time
 	"time":               "string", // time.Time
-	"float":              "float64",
+	"float":              "float32",
 	"double":             "float64",
 	"decimal":            "float64",
-	"binary":             "string",
-	"varbinary":          "string",
+	"binary":             "[]byte",
+	"varbinary":          "[]byte",
 }
 var tableToGo *Convert
 var syncMysql sync.Once
@@ -61,7 +61,6 @@ func GetMysqlToGo() *Convert {
 			TableColumn:  make(map[string][]Column),
 			IgnoreTables: make([]string, 0),
 			Tables:       make([]string, 0),
-			DriverType:   "mysql",
 			Driver: &MysqlToGo{
 				Dsn: "",
 				db:  nil,
@@ -69,6 +68,10 @@ func GetMysqlToGo() *Convert {
 		}
 	})
 	return tableToGo
+}
+
+func (mtg *MysqlToGo) GetDriverType() string {
+	return "mysql"
 }
 
 //connection to mysql

@@ -11,8 +11,8 @@ type Column struct {
 	Tag           string
 }
 
-func (c Column) GetTag(tagKey string) string {
-	return fmt.Sprintf("`%s:\"%s\" json:\"%s\"`", tagKey, c.Tag, c.Tag)
+func (c Column) GetTag(format string) string {
+	return fmt.Sprintf(format, c.Tag, c.Tag)
 }
 
 func (c Column) GetGoType() string {

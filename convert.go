@@ -17,12 +17,12 @@ type SqlDriver interface {
 	Connect() error
 	ReadTablesColumns(table string) []Column
 	GetTables() []string
+	GetDriverType() string
 }
 
 type Convert struct {
 	ModelPath   string	// save path
-	DriverType  string	// driver name like mysql postgre_sql sql_server ......
-	TagKey		string  // tab key save like gorm orm ......
+	Style		string  // tab key save like gorm ,orm ,bee orm......
 	PackageName string  // go package name
 
 	TablePrefix  map[string]string    //if table exists prefix
@@ -31,6 +31,7 @@ type Convert struct {
 	Tables       []string   // all tables
 
 	Driver       SqlDriver  // impl SqlDriver instance
+
 }
 
 //get real gen tables as []string
@@ -123,13 +124,11 @@ func (convert *Convert) Run() {
 //build content with table info
 func (convert *Convert) build(tableName, tableRealName, prefix string, columns []Column) (content string) {
 	depth := 1
-	content += "package " + convert.PackageName + "\n\n" //写包名
-	content += "type " + tableName + " struct {\n"
+	format := GetFormat(convert.Style)
 
-	tagKey := convert.TagKey
-	if tagKey == "" {
-		tagKey = "orm"
-	}
+	content += "package " + convert.PackageName + "\n\n" //写包名
+	content += format.AutoImport(tableName)
+	content += "type " + tableName + " struct {\n"
 
 	for _, v := range columns {
 		var comment string
@@ -137,7 +136,7 @@ func (convert *Convert) build(tableName, tableRealName, prefix string, columns [
 			comment = fmt.Sprintf(" // %s", v.ColumnComment)
 		}
 		content += fmt.Sprintf("%s%s %s %s%s\n",
-			Tab(depth), v.GetGoColumn(prefix, true), v.GetGoType(), v.GetTag(tagKey), comment)
+			Tab(depth), v.GetGoColumn(prefix, true), v.GetGoType(), v.GetTag(format.GetTabFormat()), comment)
 	}
 	content += Tab(depth-1) + "}\n\n"
 
@@ -170,4 +169,16 @@ func (convert *Convert) writeModel(name, content string) {
 
 	cmd := exec.Command("gofmt", "-w", filePath)
 	_ = cmd.Run()
+}
+
+func (convert *Convert) SetStyle(name string) {
+	convert.Style = name
+}
+
+func (convert *Convert) GetStyle() string  {
+	if convert.Style == "" {
+		return "default"
+	}
+
+	return convert.Style
 }
