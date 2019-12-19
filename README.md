@@ -34,10 +34,10 @@ func init(){
 	orm.RegisterModel(new(Cate))
 }
 type Cate struct {
-	Id int `orm:"column(id)" json:"id"`
-	Name string `orm:"column(name)" json:"name"`
-	CreateTime string `orm:"column(create_time)" json:"create_time"`
-	UpdateTime string `orm:"column(update_time)" json:"update_time"`
+	Id         uint   `orm:"column(id);size(10);type(int(11) unsigned);" json:"id"`
+	Name       string `orm:"column(name);size(50);type(varchar(50));" json:"name"`
+	CreateTime string `orm:"column(create_time);type(timestamp);" json:"create_time"`
+	UpdateTime string `orm:"column(update_time);type(timestamp);" json:"update_time"`
 }
 
 func (cate *Cate) GetTableName() string {
