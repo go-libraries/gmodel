@@ -17,9 +17,35 @@
 
 # 快速入门
 
+
     go get -u github.com/go-libraries/gmodel
     
-    gmodel -dsn="root:sa@tcp(localhost:3306)/blog" -dir=/Users/limars/Desktop/tws -style=bee
+    gmodel -dsn="root:sa@tcp(localhost:3306)/blog" -dir=/tmp -style=bee -package=model
+    
+    cat /tmp/cate.go
+   
+文件内容如下：   
+```go
+package model
+
+import "github.com/astaxie/beego/orm"
+
+func init(){
+	orm.RegisterModel(new(Cate))
+}
+type Cate struct {
+	Id int `orm:"column(id)" json:"id"`
+	Name string `orm:"column(name)" json:"name"`
+	CreateTime string `orm:"column(create_time)" json:"create_time"`
+	UpdateTime string `orm:"column(update_time)" json:"update_time"`
+}
+
+func (cate *Cate) GetTableName() string {
+	return "cate"
+}
+```
+s
+help:
     
     Usage of gmodel:
       -dir string
