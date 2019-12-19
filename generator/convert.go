@@ -21,16 +21,16 @@ type SqlDriver interface {
 }
 
 type Convert struct {
-	ModelPath   string	// save path
-	Style		string  // tab key save like gorm ,orm ,bee orm......
-	PackageName string  // go package name
+	ModelPath   string // save path
+	Style       string // tab key save like gorm ,orm ,bee orm......
+	PackageName string // go package name
 
 	TablePrefix  map[string]string   //if table exists prefix
 	TableColumn  map[string][]Column //key is table , value is Column list
 	IgnoreTables []string            // ignore tables
 	Tables       []string            // all tables
 
-	Driver       SqlDriver  // impl SqlDriver instance
+	Driver SqlDriver // impl SqlDriver instance
 
 }
 
@@ -93,7 +93,6 @@ func (convert *Convert) SetPackageName(name string) {
 //4. build
 //5. write file
 func (convert *Convert) Run() {
-
 	err := convert.Driver.Connect()
 	if err != nil {
 		panic(err)
@@ -136,7 +135,7 @@ func (convert *Convert) build(tableName, tableRealName, prefix string, columns [
 			comment = fmt.Sprintf(" // %s", v.ColumnComment)
 		}
 		content += fmt.Sprintf("%s%s %s %s%s\n",
-			Tab(depth), v.GetGoColumn(prefix, true), v.GetGoType(), v.GetTag(format.GetTabFormat()), comment)
+			Tab(depth), v.GetGoColumn(prefix, true), v.GetGoType(), v.GetTag(format), comment)
 	}
 	content += Tab(depth-1) + "}\n\n"
 
@@ -150,7 +149,7 @@ func (convert *Convert) build(tableName, tableRealName, prefix string, columns [
 
 //write file
 func (convert *Convert) writeModel(name, content string) {
-	log.Printf("write model file %s start", name)
+	log.Printf("write model file %s start\n", name)
 	filePath := fmt.Sprintf("%s/%s.go", convert.ModelPath, name)
 	f, err := os.Create(filePath)
 	if err != nil {
@@ -170,14 +169,14 @@ func (convert *Convert) writeModel(name, content string) {
 
 	cmd := exec.Command("gofmt", "-w", filePath)
 	_ = cmd.Run()
-	log.Printf("write model file %s success", name)
+	log.Printf("write model file %s success\n", name)
 }
 
 func (convert *Convert) SetStyle(name string) {
 	convert.Style = name
 }
 
-func (convert *Convert) GetStyle() string  {
+func (convert *Convert) GetStyle() string {
 	if convert.Style == "" {
 		return "default"
 	}
@@ -185,7 +184,7 @@ func (convert *Convert) GetStyle() string  {
 	return convert.Style
 }
 
-func GetDriver(dir,driver,dsn,style,packageName string) *Convert {
+func GetDriver(dir, driver, dsn, style, packageName string) *Convert {
 	convert := &Convert{}
 	convert.SetPackageName(packageName)
 	convert.SetModelPath(dir)
