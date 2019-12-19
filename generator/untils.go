@@ -1,17 +1,18 @@
-
-
 /*
  * Copyright (c) 2019 Mars Lee. All rights reserved.
  */
 
 package generator
 
-import "strings"
+import (
+	"strconv"
+	"strings"
+)
 
 // aaa_bbb => AaaBbb
 // if !ucFirst
 // aaa_bbb => aaabbb
-func CamelCase(str,prefix string, ucFirst bool) string {
+func CamelCase(str, prefix string, ucFirst bool) string {
 	// 是否有表前缀, 设置了就先去除表前缀
 	if prefix != "" {
 		str = strings.Replace(str, prefix, "", 1)
@@ -47,4 +48,14 @@ func UcFirst(s string) string {
 
 func LcFirst(s string) string {
 	return strings.ToLower(s[0:1]) + s[1:]
+}
+
+func Byte2Int64(data []byte) int64 {
+	var str string
+	var ret int64 = 0
+	for i := 0; i < len(data); i++ {
+		str += string(data[i])
+	}
+	ret, _ = strconv.ParseInt(str, 10, 64)
+	return ret
 }

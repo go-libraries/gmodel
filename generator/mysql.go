@@ -15,12 +15,12 @@ var TypeMappingMysqlToGo = map[string]string{
 	"smallint":           "int16",
 	"mediumint":          "int32",
 	"bigint":             "int64",
-	"int unsigned":       "uint",
-	"integer unsigned":   "uint",
-	"tinyint unsigned":   "uint8",
-	"smallint unsigned":  "uint16",
-	"mediumint unsigned": "uint32",
-	"bigint unsigned":    "uint64",
+	"int unsigned":       "int",
+	"integer unsigned":   "int",
+	"tinyint unsigned":   "int8",
+	"smallint unsigned":  "int16",
+	"mediumint unsigned": "int32",
+	"bigint unsigned":    "int64",
 	"bit":                "int8",
 	"bool":               "bool",
 	"enum":               "string",
@@ -125,7 +125,8 @@ func (mtg *MysqlToGo) GetTables() (tables []string) {
 //read struct from db
 func (mtg *MysqlToGo) ReadTablesColumns(table string) []Column {
 	columns := make([]Column, 0)
-	rows, err := mtg.db.Query(fmt.Sprintf(`SELECT COLUMN_NAME,DATA_TYPE,IS_NULLABLE,TABLE_NAME,COLUMN_COMMENT
+	rows, err := mtg.db.Query(fmt.Sprintf(`SELECT 
+		COLUMN_NAME,DATA_TYPE,IS_NULLABLE,TABLE_NAME,COLUMN_COMMENT,CHARACTER_MAXIMUM_LENGTH,COLUMN_TYPE,NUMERIC_PRECISION
 		FROM information_schema.COLUMNS 
 		WHERE table_schema = DATABASE()  AND TABLE_NAME = '%s'`, table))
 
@@ -145,9 +146,19 @@ func (mtg *MysqlToGo) ReadTablesColumns(table string) []Column {
 
 	for rows.Next() {
 
+		//todo: mysql bigint => go []byte
+		var maxLength, numberPrecision []byte
 		col := Column{}
-		err = rows.Scan(&col.ColumnName, &col.Type, &col.Nullable, &col.TableName, &col.ColumnComment)
+		err = rows.Scan(&col.ColumnName, &col.Type, &col.Nullable, &col.TableName, &col.ColumnComment, &maxLength, &col.ColumnType, &numberPrecision)
 		col.Tag = col.ColumnName
+
+		if maxLength != nil {
+			col.MaxLength = Byte2Int64(maxLength)
+		}
+
+		if numberPrecision != nil {
+			col.NumberPrecision = Byte2Int64(numberPrecision)
+		}
 
 		if err != nil {
 			log.Println(err.Error())
