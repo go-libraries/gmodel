@@ -12,7 +12,10 @@
 
 目前支持mysql，未来预计支持mariadb和pgsql(sql server还未考量)
 
-2019-12-19 支持多种风格文件生成(目前支持 bee、gorm、默认格式)
+2019-12-19 
+
+1. 支持多种风格文件生成(目前支持 bee、gorm、默认格式)
+2. 新增无符号整型和标签内容（size、type）
 
 
 # 快速入门
@@ -33,6 +36,7 @@ import "github.com/astaxie/beego/orm"
 func init(){
 	orm.RegisterModel(new(Cate))
 }
+
 type Cate struct {
 	Id         uint   `orm:"column(id);size(10);type(int(11) unsigned);" json:"id"`
 	Name       string `orm:"column(name);size(50);type(varchar(50));" json:"name"`
