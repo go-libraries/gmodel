@@ -150,6 +150,7 @@ func (convert *Convert) build(tableName, tableRealName, prefix string, columns [
 
 //write file
 func (convert *Convert) writeModel(name, content string) {
+	log.Printf("write model file %s start", name)
 	filePath := fmt.Sprintf("%s/%s.go", convert.ModelPath, name)
 	f, err := os.Create(filePath)
 	if err != nil {
@@ -169,6 +170,7 @@ func (convert *Convert) writeModel(name, content string) {
 
 	cmd := exec.Command("gofmt", "-w", filePath)
 	_ = cmd.Run()
+	log.Printf("write model file %s success", name)
 }
 
 func (convert *Convert) SetStyle(name string) {

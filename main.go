@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"github.com/go-libraries/gmodel/generator"
+	"log"
 
 	"os"
 )
@@ -20,6 +21,7 @@ var (
 
 func init()  {
 	currentPath, _ := os.Getwd()
+	log.SetOutput(os.Stdout)
 	flag.StringVar(&modelPath, "dir", currentPath, "a dir name save model file path, default is current path")
 	flag.StringVar(&driver, "driver", "mysql", "database driver,like `mysql` `mariadb`, default is mysql")
 	flag.StringVar(&dsn, "dsn", "", "connection info names dsn")
