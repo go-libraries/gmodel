@@ -4,7 +4,7 @@
  * Copyright (c) 2019 Mars Lee. All rights reserved.
  */
 
-package model
+package generator
 
 import "strings"
 

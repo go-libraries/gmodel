@@ -1,6 +1,8 @@
-package model
+package generator
 
-import "fmt"
+import (
+	"fmt"
+)
 
 type Column struct {
 	ColumnName    string

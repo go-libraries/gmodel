@@ -2,7 +2,7 @@
  * Copyright (c) 2019 Mars Lee. All rights reserved.
  */
 
-package model
+package generator
 
 import (
 	"fmt"
@@ -25,10 +25,10 @@ type Convert struct {
 	Style		string  // tab key save like gorm ,orm ,bee orm......
 	PackageName string  // go package name
 
-	TablePrefix  map[string]string    //if table exists prefix
-	TableColumn  map[string][]Column  //key is table , value is Column list
-	IgnoreTables []string   // ignore tables
-	Tables       []string   // all tables
+	TablePrefix  map[string]string   //if table exists prefix
+	TableColumn  map[string][]Column //key is table , value is Column list
+	IgnoreTables []string            // ignore tables
+	Tables       []string            // all tables
 
 	Driver       SqlDriver  // impl SqlDriver instance
 
@@ -181,4 +181,21 @@ func (convert *Convert) GetStyle() string  {
 	}
 
 	return convert.Style
+}
+
+func GetDriver(dir,driver,dsn,style,packageName string) *Convert {
+	convert := &Convert{}
+	convert.SetPackageName(packageName)
+	convert.SetModelPath(dir)
+
+	switch driver {
+	case "mysql":
+		convert.Driver = &MysqlToGo{}
+		convert.Driver.SetDsn(dsn)
+		convert.SetStyle(style)
+	default:
+		panic(fmt.Sprintf("do not support this driver: %v\n", driver))
+	}
+
+	return convert
 }
