@@ -87,6 +87,11 @@ func (mtg *MysqlToGo) Connect() error {
 		return err
 	}
 
+	err = db.Ping()
+	if err != nil {
+		return err
+	}
+
 	mtg.db = db
 	return nil
 }

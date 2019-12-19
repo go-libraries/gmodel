@@ -3,7 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/go-libraries/model/generator"
+	"github.com/go-libraries/gmodel/generator"
 
 	"os"
 )
