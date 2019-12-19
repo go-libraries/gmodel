@@ -6,7 +6,7 @@
 
 # 原理
 
-通过获取mysql表结构，进行model文件生成。
+通过获取数据库表结构，进行model文件生成。
 
 # 迭代
 
@@ -14,9 +14,31 @@
 
 2019-12-19 支持多种风格文件生成(目前支持 bee、gorm、默认格式)
 
-    convert.SetStyle("bee")
 
 # 快速入门
+
+    go get -u github.com/go-libraries/gmodel
+    
+    gmodel -dsn="root:sa@tcp(localhost:3306)/blog" -dir=/Users/limars/Desktop/tws -style=bee
+    
+    Usage of gmodel:
+      -dir string
+        	a dir name save model file path, default is current path (default "/Users/limars/Go/bin")
+      -driver mysql
+        	database driver,like mysql `mariadb`, default is mysql (default "mysql")
+      -dsn string
+        	connection info names dsn
+      -h	this help
+      -help
+        	this help
+      -ig_tables string
+        	ignore table names
+      -package string
+        	help
+      -style bee
+        	use orm style like bee `gorm`, default `default` (default "default")
+
+# 代码应用
 
 代码：
 ```
