@@ -20,17 +20,21 @@ type SqlDriver interface {
 }
 
 type Convert struct {
-	ModelPath    string
-	TablePrefix  map[string]string
-	TableColumn  map[string][]Column
-	IgnoreTables []string
-	Tables       []string
-	PackageName  string
-	DriverType   string
-	Driver       SqlDriver
+	ModelPath   string	// save path
+	DriverType  string	// driver name like mysql postgre_sql sql_server ......
+	TagKey		string  // tab key save like gorm orm ......
+	PackageName string  // go package name
+
+	TablePrefix  map[string]string    //if table exists prefix
+	TableColumn  map[string][]Column  //key is table , value is Column list
+	IgnoreTables []string   // ignore tables
+	Tables       []string   // all tables
+
+	Driver       SqlDriver  // impl SqlDriver instance
 }
 
-func (convert Convert) getGenTables() []string {
+//get real gen tables as []string
+func (convert *Convert) getGenTables() []string {
 	tables := make([]string, 0)
 	convert.Tables = convert.Driver.GetTables()
 	for _, table := range convert.Tables {
