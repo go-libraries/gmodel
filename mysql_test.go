@@ -16,11 +16,9 @@ func TestMysqlGenFile(t *testing.T) {
 	dsn := mysqlUser + ":" + mysqlPassword + "@tcp(" + mysqlHost + ":" + mysqlPort + ")/" + mysqlDbname + "?charset=utf8mb4"
 
 	Mysql := GetMysqlToGo()
-	Mysql.SetDsn(dsn)
+	Mysql.Driver.SetDsn(dsn)
 	Mysql.SetModelPath("/tmp")
-	Mysql.GetTables()
-	Mysql.ReadTablesColumns()
+	Mysql.SetIgnoreTables("cate")
 	Mysql.SetPackageName("models")
 	Mysql.Run()
 }
-

@@ -2,7 +2,7 @@ package model
 
 import "fmt"
 
-type column struct {
+type Column struct {
 	ColumnName    string
 	Type          string
 	Nullable      string
@@ -11,21 +11,22 @@ type column struct {
 	Tag           string
 }
 
-func (c column) GetTag(tagKey string) string {
+func (c Column) GetTag(tagKey string) string {
 	return fmt.Sprintf("`%s:\"%s\" json:\"%s\"`", tagKey, c.Tag, c.Tag)
 }
 
-func (c column) GetGoType() string {
-	v,ok := TypeMappingMysqlToGo[c.Type]; if ok {
+func (c Column) GetGoType() string {
+	v, ok := TypeMappingMysqlToGo[c.Type]
+	if ok {
 		return v
 	}
 	return ""
 }
 
-func (c column) GetMysqlType() string  {
+func (c Column) GetMysqlType() string {
 	return c.Type
 }
 
-func (c column) GetGoColumn(prefix string, ucFirst bool) string  {
+func (c Column) GetGoColumn(prefix string, ucFirst bool) string {
 	return CamelCase(c.ColumnName, prefix, ucFirst)
 }

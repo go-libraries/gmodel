@@ -12,13 +12,42 @@ import (
 	"strings"
 )
 
+type SqlDriver interface {
+	SetDsn(dsn string, options ...interface{})
+	Connect() error
+	ReadTablesColumns(table string) []Column
+	GetTables() []string
+}
+
 type Convert struct {
 	ModelPath    string
 	TablePrefix  map[string]string
-	TableColumn  map[string][]column
+	TableColumn  map[string][]Column
 	IgnoreTables []string
 	Tables       []string
 	PackageName  string
+	DriverType   string
+	Driver       SqlDriver
+}
+
+func (convert Convert) getGenTables() []string {
+	tables := make([]string, 0)
+	convert.Tables = convert.Driver.GetTables()
+	for _, table := range convert.Tables {
+		isIgnore := false
+		for _, ignore := range convert.IgnoreTables {
+			if table == ignore {
+				isIgnore = true
+				break
+			}
+		}
+
+		if !isIgnore {
+			tables = append(tables, table)
+		}
+	}
+
+	return tables
 }
 
 //set table prefix
@@ -52,8 +81,20 @@ func (convert *Convert) SetPackageName(name string) {
 	convert.PackageName = name
 }
 
+//run
+//1. connect
+//2. getTable
+//3. getColumns
+//4. build
+//5. write file
 func (convert *Convert) Run() {
-	for _, tableRealName := range convert.Tables {
+
+	err := convert.Driver.Connect()
+	if err != nil {
+		panic(err)
+	}
+
+	for _, tableRealName := range convert.getGenTables() {
 		prefix, ok := convert.TablePrefix[tableRealName]
 		if ok {
 			tableRealName = tableRealName[len(prefix):]
@@ -68,30 +109,38 @@ func (convert *Convert) Run() {
 		default:
 			tableName = strings.ToUpper(tableName[0:1]) + tableName[1:]
 		}
-		depth := 1
-		var content string
-		content += "package " + convert.PackageName + "\n\n" //写包名
-		content += "type " + tableName + " struct {\n"
-		columns, ok := convert.TableColumn[tableRealName]
-		for _, v := range columns {
-			var comment string
-			if v.ColumnComment != "" {
-				comment = fmt.Sprintf(" // %s", v.ColumnComment)
-			}
-			content += fmt.Sprintf("%s%s %s %s%s\n",
-				Tab(depth), v.GetGoColumn(prefix, true), v.GetGoType(), v.GetTag("orm"), comment)
-		}
-		content += Tab(depth-1) + "}\n\n"
 
-		content += fmt.Sprintf("func (%s *%s) %s() string {\n",
-			LcFirst(tableName), tableName, "GetTableName")
-		content += fmt.Sprintf("%sreturn \"%s\"\n",
-			Tab(depth), tableRealName)
-		content += "}\n\n"
+		columns := convert.Driver.ReadTablesColumns(tableRealName)
+		content := convert.build(tableName, tableRealName, prefix, columns)
 		convert.writeModel(tableRealName, content) //写文件
 	}
 }
 
+//build content with table info
+func (convert *Convert) build(tableName, tableRealName, prefix string, columns []Column) (content string) {
+	depth := 1
+	content += "package " + convert.PackageName + "\n\n" //写包名
+	content += "type " + tableName + " struct {\n"
+
+	for _, v := range columns {
+		var comment string
+		if v.ColumnComment != "" {
+			comment = fmt.Sprintf(" // %s", v.ColumnComment)
+		}
+		content += fmt.Sprintf("%s%s %s %s%s\n",
+			Tab(depth), v.GetGoColumn(prefix, true), v.GetGoType(), v.GetTag("orm"), comment)
+	}
+	content += Tab(depth-1) + "}\n\n"
+
+	content += fmt.Sprintf("func (%s *%s) %s() string {\n",
+		LcFirst(tableName), tableName, "GetTableName")
+	content += fmt.Sprintf("%sreturn \"%s\"\n",
+		Tab(depth), tableRealName)
+	content += "}\n\n"
+	return content
+}
+
+//write file
 func (convert *Convert) writeModel(name, content string) {
 	filePath := fmt.Sprintf("%s/%s.go", convert.ModelPath, name)
 	f, err := os.Create(filePath)
@@ -99,9 +148,12 @@ func (convert *Convert) writeModel(name, content string) {
 		log.Println("Can not write file" + filePath)
 		return
 	}
-	defer f.Close()
 
-	_,err = f.WriteString(content)
+	defer func() {
+		_ = f.Close()
+	}()
+
+	_, err = f.WriteString(content)
 	if err != nil {
 		log.Println("Can not write file" + filePath)
 		return

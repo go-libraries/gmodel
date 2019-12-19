@@ -4,9 +4,9 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
-	"os"
 	"sync"
 )
+
 var TypeMappingMysqlToGo = map[string]string{
 	"int":                "int",
 	"integer":            "int",
@@ -44,25 +44,27 @@ var TypeMappingMysqlToGo = map[string]string{
 	"binary":             "string",
 	"varbinary":          "string",
 }
-var tableToGo *MysqlToGo
+var tableToGo *Convert
 var syncMysql sync.Once
+
 type MysqlToGo struct {
-	*Convert
 	Dsn string
-	db *sql.DB
+	db  *sql.DB
 }
 
-func GetMysqlToGo() *MysqlToGo  {
+func GetMysqlToGo() *Convert {
+
 	syncMysql.Do(func() {
-		tableToGo = &MysqlToGo{
-			Dsn:          "",
-			db:           nil,
-			Convert: &Convert{
-				ModelPath:    "",
-				TablePrefix:  make(map[string]string),
-				TableColumn:  make(map[string][]column),
-				IgnoreTables: make([]string, 0),
-				Tables:       make([]string, 0),
+		tableToGo = &Convert{
+			ModelPath:    "",
+			TablePrefix:  make(map[string]string),
+			TableColumn:  make(map[string][]Column),
+			IgnoreTables: make([]string, 0),
+			Tables:       make([]string, 0),
+			DriverType:   "mysql",
+			Driver: &MysqlToGo{
+				Dsn: "",
+				db:  nil,
 			},
 		}
 	})
@@ -70,50 +72,30 @@ func GetMysqlToGo() *MysqlToGo  {
 }
 
 //connection to mysql
-func (mtg *MysqlToGo) SetDsn(dsn string)  {
-	db, err := sql.Open("mysql", dsn)
-	if err!= nil{
-		panic(err)
-	}
-
+func (mtg *MysqlToGo) SetDsn(dsn string, options ...interface{}) {
 	mtg.Dsn = dsn
-	mtg.db = db
 }
 
-//set table prefix
-//if exists
-//replace prefix to empty string
-func (mtg *MysqlToGo) SetTablePrefix(table,prefix string)  {
-	mtg.TablePrefix[table] = prefix
-}
-
-// set model save path
-func (mtg *MysqlToGo) SetModelPath(path string)  {
-	_, err := os.Stat(path)
-
+//connection to mysql
+func (mtg *MysqlToGo) Connect() error {
+	db, err := sql.Open("mysql", mtg.Dsn)
 	if err != nil {
-		if os.IsNotExist(err) {
-			log.Panicf("path not exists with error：%v \n", err)
-		}
-		log.Printf("path error：%v \n", err)
+		return err
 	}
 
-	mtg.ModelPath = path
+	mtg.db = db
+	return nil
 }
 
-// set model save path
-func (mtg *MysqlToGo) SetIgnoreTables(table... string)  {
-	mtg.IgnoreTables = append(mtg.IgnoreTables, table...)
-}
-
-func (mtg *MysqlToGo) GetTables() []string  {
+// tables
+func (mtg *MysqlToGo) GetTables() (tables []string) {
 	rows, err := mtg.db.Query("show tables;")
 	if err != nil {
-		panic(err)
+		return tables
 	}
 
 	if rows == nil {
-		panic("rows is nil")
+		return tables
 	}
 	defer func() {
 		_ = rows.Close()
@@ -125,51 +107,37 @@ func (mtg *MysqlToGo) GetTables() []string  {
 		if err != nil {
 			panic(err)
 		}
-		mtg.Tables = append(mtg.Tables, f)
+		tables = append(tables, f)
 	}
 
-	return mtg.Tables
+	return tables
 }
 
 //read struct from db
-func (mtg *MysqlToGo) ReadTablesColumns() {
-	for _,table := range mtg.Tables {
-		isIgnore := false
-		for _,ignore := range mtg.IgnoreTables {
-			if table == ignore {
-				isIgnore = true
-				break
-			}
-		}
-
-		if !isIgnore {
-			mtg.readTablesColumns(table)
-		}
-	}
-
-}
-
-//read struct from db
-func (mtg *MysqlToGo) readTablesColumns(table string) {
-	result,err := mtg.db.Query(fmt.Sprintf(`SELECT COLUMN_NAME,DATA_TYPE,IS_NULLABLE,TABLE_NAME,COLUMN_COMMENT
+func (mtg *MysqlToGo) ReadTablesColumns(table string) []Column {
+	columns := make([]Column, 0)
+	rows, err := mtg.db.Query(fmt.Sprintf(`SELECT COLUMN_NAME,DATA_TYPE,IS_NULLABLE,TABLE_NAME,COLUMN_COMMENT
 		FROM information_schema.COLUMNS 
 		WHERE table_schema = DATABASE()  AND TABLE_NAME = '%s'`, table))
 
 	if err != nil {
-		log.Printf("table result is nil with table:%s error: %v \n",table,err)
-		return
+		log.Printf("table rows is nil with table:%s error: %v \n", table, err)
+		return columns
 	}
 
-	if result == nil {
-		log.Printf("result is nil with table:%s \n",table)
-		return
+	if rows == nil {
+		log.Printf("rows is nil with table:%s \n", table)
+		return columns
 	}
 
+	defer func() {
+		_ = rows.Close()
+	}()
 
-	for result.Next() {
+	for rows.Next() {
 
-		col := column{}
-		err = result.Scan(&col.ColumnName, &col.Type, &col.Nullable, &col.TableName, &col.ColumnComment)
+		col := Column{}
+		err = rows.Scan(&col.ColumnName, &col.Type, &col.Nullable, &col.TableName, &col.ColumnComment)
 		col.Tag = col.ColumnName
 
 		if err != nil {
@@ -177,11 +145,7 @@ func (mtg *MysqlToGo) readTablesColumns(table string) {
 			continue
 		}
 
-		mtg.TableColumn[table] = append(mtg.TableColumn[table], col)
+		columns = append(columns, col)
 	}
+	return columns
 }
-
-
-
-
-
