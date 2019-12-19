@@ -126,13 +126,18 @@ func (convert *Convert) build(tableName, tableRealName, prefix string, columns [
 	content += "package " + convert.PackageName + "\n\n" //写包名
 	content += "type " + tableName + " struct {\n"
 
+	tagKey := convert.TagKey
+	if tagKey == "" {
+		tagKey = "orm"
+	}
+
 	for _, v := range columns {
 		var comment string
 		if v.ColumnComment != "" {
 			comment = fmt.Sprintf(" // %s", v.ColumnComment)
 		}
 		content += fmt.Sprintf("%s%s %s %s%s\n",
-			Tab(depth), v.GetGoColumn(prefix, true), v.GetGoType(), v.GetTag("orm"), comment)
+			Tab(depth), v.GetGoColumn(prefix, true), v.GetGoType(), v.GetTag(tagKey), comment)
 	}
 	content += Tab(depth-1) + "}\n\n"
 
