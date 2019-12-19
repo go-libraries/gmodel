@@ -67,8 +67,11 @@ func (c Column) getProperty(format Format) string {
 
 	tpFormat := pf.GetTypeFormat()
 	if tpFormat != "" {
-		value += fmt.Sprintf(tpFormat, c.ColumnType)
-		value += ";"
+		//only support time type
+		if strings.Index( strings.ToLower(c.ColumnType), "time") > -1 {
+			value += fmt.Sprintf(tpFormat, c.ColumnType)
+			value += ";"
+		}
 	}
 
 	return value
