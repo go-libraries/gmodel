@@ -12,6 +12,10 @@
 
 目前支持mysql，未来预计支持mariadb和pgsql(sql server还未考量)
 
+2019-12-19 支持多种风格文件生成(目前支持 bee、gorm、默认格式)
+
+    convert.SetStyle("bee")
+
 # 快速入门
 
 代码：
