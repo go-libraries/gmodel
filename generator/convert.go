@@ -9,7 +9,6 @@ import (
 	"log"
 	"os"
 	"os/exec"
-	"strings"
 )
 
 type SqlDriver interface {
@@ -105,14 +104,10 @@ func (convert *Convert) Run() {
 		}
 		tableName := tableRealName
 
-		switch len(tableName) {
-		case 0:
+		if len(tableName) < 0 {
 			continue
-		case 1:
-			tableName = strings.ToUpper(tableName[0:1])
-		default:
-			tableName = strings.ToUpper(tableName[0:1]) + tableName[1:]
 		}
+		tableName = CamelCase(tableName, prefix, true)
 
 		columns := convert.Driver.ReadTablesColumns(tableRealName)
 		content := convert.build(tableName, tableRealName, prefix, columns)
