@@ -18,7 +18,18 @@ type Column struct {
 }
 
 func (c Column) GetTag(format Format) string {
-	return fmt.Sprintf(format.GetTabFormat(), c.Tag, c.getProperty(format), c.Tag)
+
+	propertyString := c.getProperty(format)
+	if propertyString != "" {
+		propertyString = strings.TrimRight(propertyString, ";")
+	}
+
+	value := fmt.Sprintf(format.GetTabFormat(), c.Tag, propertyString, c.Tag)
+	if value != "" {
+		value = strings.TrimRight(value, ";")
+	}
+
+	return value
 }
 
 func (c Column) GetGoType() string {
@@ -47,7 +58,7 @@ func (c Column) getProperty(format Format) string {
 		return ""
 	}
 
-	pf := format.PropertyFormat
+	pf := format.GetPropertyFormat()
 	value := ""
 	var size int64
 
