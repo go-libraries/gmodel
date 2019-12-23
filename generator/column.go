@@ -26,7 +26,14 @@ func (c Column) GetTag(format Format) string {
 
 	value := fmt.Sprintf(format.GetTabFormat(), c.Tag, propertyString, c.Tag)
 	if value != "" {
-		value = strings.TrimRight(value, ";")
+		if propertyString == "" {
+			index := strings.Index(value, ";")
+			if index > -1 {
+				value = value[0:index] + value[index+1:]
+			}
+
+		}
+
 	}
 
 	return value
