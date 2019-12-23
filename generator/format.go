@@ -7,6 +7,7 @@ type Format struct {
 	TabFormat      string // format must use 3 %s in it, first column name, second property  third json name
 	AutoInfo       string
 	PropertyFormat PropertyFormat // like size s
+	JsonUseCamel   bool
 }
 type PropertyFormat struct {
 	Size  string
