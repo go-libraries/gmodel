@@ -126,7 +126,7 @@ func (mtg *MysqlToGo) GetTables() (tables []string) {
 func (mtg *MysqlToGo) ReadTablesColumns(table string) []Column {
 	columns := make([]Column, 0)
 	rows, err := mtg.db.Query(fmt.Sprintf(`SELECT 
-		COLUMN_NAME,DATA_TYPE,IS_NULLABLE,TABLE_NAME,COLUMN_COMMENT,CHARACTER_MAXIMUM_LENGTH,COLUMN_TYPE,NUMERIC_PRECISION
+		COLUMN_NAME,DATA_TYPE,IS_NULLABLE,TABLE_NAME,COLUMN_COMMENT,CHARACTER_MAXIMUM_LENGTH,COLUMN_TYPE,NUMERIC_PRECISION,COLUMN_KEY
 		FROM information_schema.COLUMNS 
 		WHERE table_schema = DATABASE()  AND TABLE_NAME = '%s'`, table))
 
@@ -149,7 +149,7 @@ func (mtg *MysqlToGo) ReadTablesColumns(table string) []Column {
 		//todo: mysql bigint => go []byte
 		var maxLength, numberPrecision []byte
 		col := Column{}
-		err = rows.Scan(&col.ColumnName, &col.Type, &col.Nullable, &col.TableName, &col.ColumnComment, &maxLength, &col.ColumnType, &numberPrecision)
+		err = rows.Scan(&col.ColumnName, &col.Type, &col.Nullable, &col.TableName, &col.ColumnComment, &maxLength, &col.ColumnType, &numberPrecision, &col.ColumnKey)
 		col.Tag = col.ColumnName
 
 		if maxLength != nil {

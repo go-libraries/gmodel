@@ -15,6 +15,7 @@ type Column struct {
 	MaxLength       int64
 	NumberPrecision int64
 	ColumnType      string
+	ColumnKey       string
 }
 
 func (c Column) GetTag(format Format) string {
@@ -96,4 +97,8 @@ func (c Column) getProperty(format Format) string {
 	}
 
 	return value
+}
+
+func (c Column) IsPrimaryKey() bool {
+	return c.ColumnKey == "PRI"
 }
