@@ -14,6 +14,7 @@ import (
 
 type SqlDriver interface {
 	SetDsn(dsn string, options ...interface{})
+	GetDsn() string
 	Connect() error
 	ReadTablesColumns(table string) []Column
 	GetTables() []string
@@ -32,6 +33,7 @@ type Convert struct {
 
 	Driver SqlDriver // impl SqlDriver instance
 
+	initOrm bool
 }
 
 //get real gen tables as []string
@@ -105,19 +107,16 @@ func (convert *Convert) Run() {
 		}
 		tableName := tableRealName
 
-		switch len(tableName) {
-		case 0:
+		if len(tableName) < 0 {
 			continue
-		case 1:
-			tableName = strings.ToUpper(tableName[0:1])
-		default:
-			tableName = strings.ToUpper(tableName[0:1]) + tableName[1:]
 		}
+		tableName = CamelCase(tableName, prefix, true)
 
 		columns := convert.Driver.ReadTablesColumns(tableRealName)
 		content := convert.build(tableName, tableRealName, prefix, columns)
 		convert.writeModel(tableRealName, content) //写文件
 	}
+	convert.writeInit()
 }
 
 //build content with table info
@@ -129,6 +128,8 @@ func (convert *Convert) build(tableName, tableRealName, prefix string, columns [
 	content += format.AutoImport(tableName)
 	content += "type " + tableName + " struct {\n"
 
+	primaryKey := ""
+	var primaryColumns Column
 	for _, v := range columns {
 		var comment string
 		if v.ColumnComment != "" {
@@ -136,15 +137,92 @@ func (convert *Convert) build(tableName, tableRealName, prefix string, columns [
 		}
 		content += fmt.Sprintf("%s%s %s %s%s\n",
 			Tab(depth), v.GetGoColumn(prefix, true), v.GetGoType(), v.GetTag(format), comment)
+
+		if v.IsPrimaryKey() {
+			primaryKey = v.ColumnName
+			primaryColumns = v
+		}
+
 	}
+
 	content += Tab(depth-1) + "}\n\n"
 
-	content += fmt.Sprintf("func (%s *%s) %s() string {\n",
-		LcFirst(tableName), tableName, "GetTableName")
+	if primaryKey != "" {
+		content += fmt.Sprintf("//get real primary key name \nfunc (%s *%s) %s() string {\n",
+			LcFirst(tableName), tableName, "GetKey")
+		content += fmt.Sprintf("%sreturn \"%s\"\n",
+			Tab(depth), primaryKey)
+		content += "}\n\n\n"
+
+		content += fmt.Sprintf("//get primary key in model\nfunc (%s *%s) %s() %s {\n",
+			LcFirst(tableName), tableName, "GetKeyProperty", primaryColumns.GetGoType())
+		content += fmt.Sprintf("%sreturn %s.%s\n",
+			Tab(depth), LcFirst(tableName), CamelCase(primaryKey, prefix, true))
+		content += "}\n\n\n"
+
+		content += fmt.Sprintf("//set primary key \nfunc (%s *%s) %s(id %s) {\n",
+			LcFirst(tableName), tableName, "SetKeyProperty", primaryColumns.GetGoType())
+		content += fmt.Sprintf("%s %s.%s = id\n",
+			Tab(depth), LcFirst(tableName), CamelCase(primaryKey, prefix, true))
+		content += "}\n\n\n"
+	}
+	content += fmt.Sprintf("//get real table name\nfunc (%s *%s) %s() string {\n",
+		LcFirst(tableName), tableName, "TableName")
 	content += fmt.Sprintf("%sreturn \"%s\"\n",
 		Tab(depth), tableRealName)
-	content += "}\n\n"
+	content += "}\n\n\n"
+
+	content += convert.buildCurd(tableName, format)
 	return content
+}
+
+func (convert *Convert) buildCurd(tableName string, format Format) string {
+	content := ""
+	tpl := format.GetFuncTemplate(convert.Style)
+	if tpl != "" {
+		tpl = strings.Replace(tpl, "{{entry}}", LcFirst(tableName), -1)
+		tpl = strings.Replace(tpl, "{{object}}", tableName, -1)
+		content += tpl
+		convert.initOrm = true
+	}
+
+	return content
+}
+
+//write file
+func (convert *Convert) writeInit() {
+	if convert.initOrm {
+		format := GetFormat(convert.Style)
+		tpl := format.GetInitTemplate(convert.Style)
+
+		if tpl != "" {
+			tpl = strings.Replace(tpl, "{{package}}", convert.PackageName, -1)
+			tpl = strings.Replace(tpl, "{{dns}}", convert.Driver.GetDsn(), -1)
+
+			log.Printf("write init file start\n", )
+			filePath := fmt.Sprintf("%s/%s.go", convert.ModelPath, "init")
+			f, err := os.Create(filePath)
+			if err != nil {
+				log.Println("Can not write file" + filePath)
+				return
+			}
+
+			defer func() {
+				_ = f.Close()
+			}()
+
+			_, err = f.WriteString(tpl)
+			if err != nil {
+				log.Println("Can not write file" + filePath)
+				return
+			}
+
+			cmd := exec.Command("gofmt", "-w", filePath)
+			_ = cmd.Run()
+			log.Printf("write init file  success\n")
+		}
+	}
+
 }
 
 //write file

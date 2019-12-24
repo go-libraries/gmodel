@@ -17,7 +17,8 @@ func TestMysqlGenFile(t *testing.T) {
 
 	Mysql := GetMysqlToGo()
 	Mysql.Driver.SetDsn(dsn)
-	Mysql.SetStyle("bee")
+	//Mysql.SetStyle("bee")
+	Mysql.SetStyle("gorm")
 	Mysql.SetModelPath("/tmp")
 	Mysql.SetIgnoreTables("cate")
 	Mysql.SetPackageName("models")

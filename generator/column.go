@@ -15,10 +15,32 @@ type Column struct {
 	MaxLength       int64
 	NumberPrecision int64
 	ColumnType      string
+	ColumnKey       string
 }
 
 func (c Column) GetTag(format Format) string {
-	return fmt.Sprintf(format.GetTabFormat(), c.Tag, c.getProperty(format), c.Tag)
+
+	propertyString := c.getProperty(format)
+	if propertyString != "" {
+		propertyString = strings.TrimRight(propertyString, ";")
+	}
+
+	json := c.Tag
+	if !format.JsonUseCamel {
+		json = CaseCamel(json)
+	}
+
+	value := fmt.Sprintf(format.GetTabFormat(), c.Tag, propertyString, json)
+	if value != "" {
+		if propertyString == "" {
+			index := strings.Index(value, ";")
+			if index > -1 {
+				value = value[0:index] + value[index+1:]
+			}
+		}
+	}
+
+	return value
 }
 
 func (c Column) GetGoType() string {
@@ -47,7 +69,7 @@ func (c Column) getProperty(format Format) string {
 		return ""
 	}
 
-	pf := format.PropertyFormat
+	pf := format.GetPropertyFormat()
 	value := ""
 	var size int64
 
@@ -67,9 +89,16 @@ func (c Column) getProperty(format Format) string {
 
 	tpFormat := pf.GetTypeFormat()
 	if tpFormat != "" {
-		value += fmt.Sprintf(tpFormat, c.ColumnType)
-		value += ";"
+		//only support time type
+		if strings.Index(strings.ToLower(c.ColumnType), "time") > -1 {
+			value += fmt.Sprintf(tpFormat, c.ColumnType)
+			value += ";"
+		}
 	}
 
 	return value
+}
+
+func (c Column) IsPrimaryKey() bool {
+	return c.ColumnKey == "PRI"
 }

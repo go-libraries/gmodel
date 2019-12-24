@@ -37,6 +37,21 @@ func CamelCase(str, prefix string, ucFirst bool) string {
 	return text
 }
 
+func CaseCamel(str string) string {
+
+	var text string
+
+	for _, p := range str[:] {
+		if p > 64 && p < 91 {
+			p = p + 32
+			text += "_"
+		}
+		text += string(p)
+	}
+
+	return text
+}
+
 //format
 func Tab(depth int) string {
 	return strings.Repeat("\t", depth)
