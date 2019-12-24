@@ -144,7 +144,7 @@ func (convert *Convert) build(tableName, tableRealName, prefix string, columns [
 	content += Tab(depth-1) + "}\n\n"
 
 	if primaryKey != "" {
-		content += fmt.Sprintf("//get primary key name \nfunc (%s *%s) %s() string {\n",
+		content += fmt.Sprintf("//get real primary key name \nfunc (%s *%s) %s() string {\n",
 			LcFirst(tableName), tableName, "GetKey")
 		content += fmt.Sprintf("%sreturn \"%s\"\n",
 			Tab(depth), primaryKey)
@@ -162,7 +162,7 @@ func (convert *Convert) build(tableName, tableRealName, prefix string, columns [
 			Tab(depth), LcFirst(tableName), CamelCase(primaryKey, prefix, true))
 		content += "}\n\n\n"
 	}
-	content += fmt.Sprintf("//get realy table name\nfunc (%s *%s) %s() string {\n",
+	content += fmt.Sprintf("//get real table name\nfunc (%s *%s) %s() string {\n",
 		LcFirst(tableName), tableName, "GetTableName")
 	content += fmt.Sprintf("%sreturn \"%s\"\n",
 		Tab(depth), tableRealName)
