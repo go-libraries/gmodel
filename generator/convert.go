@@ -9,10 +9,12 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"strings"
 )
 
 type SqlDriver interface {
 	SetDsn(dsn string, options ...interface{})
+	GetDsn() string
 	Connect() error
 	ReadTablesColumns(table string) []Column
 	GetTables() []string
@@ -31,6 +33,7 @@ type Convert struct {
 
 	Driver SqlDriver // impl SqlDriver instance
 
+	initOrm bool
 }
 
 //get real gen tables as []string
@@ -113,6 +116,7 @@ func (convert *Convert) Run() {
 		content := convert.build(tableName, tableRealName, prefix, columns)
 		convert.writeModel(tableRealName, content) //写文件
 	}
+	convert.writeInit()
 }
 
 //build content with table info
@@ -163,11 +167,62 @@ func (convert *Convert) build(tableName, tableRealName, prefix string, columns [
 		content += "}\n\n\n"
 	}
 	content += fmt.Sprintf("//get real table name\nfunc (%s *%s) %s() string {\n",
-		LcFirst(tableName), tableName, "GetTableName")
+		LcFirst(tableName), tableName, "TableName")
 	content += fmt.Sprintf("%sreturn \"%s\"\n",
 		Tab(depth), tableRealName)
 	content += "}\n\n\n"
+
+	content += convert.buildCurd(tableName, format)
 	return content
+}
+
+func (convert *Convert) buildCurd(tableName string, format Format) string {
+	content := ""
+	tpl := format.GetFuncTemplate(convert.Style)
+	if tpl != "" {
+		tpl = strings.Replace(tpl, "{{entry}}", LcFirst(tableName), -1)
+		tpl = strings.Replace(tpl, "{{object}}", tableName, -1)
+		content += tpl
+		convert.initOrm = true
+	}
+
+	return content
+}
+
+//write file
+func (convert *Convert) writeInit() {
+	if convert.initOrm {
+		format := GetFormat(convert.Style)
+		tpl := format.GetInitTemplate(convert.Style)
+
+		if tpl != "" {
+			tpl = strings.Replace(tpl, "{{package}}", convert.PackageName, -1)
+			tpl = strings.Replace(tpl, "{{dns}}", convert.Driver.GetDsn(), -1)
+
+			log.Printf("write init file start\n", )
+			filePath := fmt.Sprintf("%s/%s.go", convert.ModelPath, "init")
+			f, err := os.Create(filePath)
+			if err != nil {
+				log.Println("Can not write file" + filePath)
+				return
+			}
+
+			defer func() {
+				_ = f.Close()
+			}()
+
+			_, err = f.WriteString(tpl)
+			if err != nil {
+				log.Println("Can not write file" + filePath)
+				return
+			}
+
+			cmd := exec.Command("gofmt", "-w", filePath)
+			_ = cmd.Run()
+			log.Printf("write init file  success\n")
+		}
+	}
+
 }
 
 //write file

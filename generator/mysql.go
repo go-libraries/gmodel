@@ -81,6 +81,11 @@ func (mtg *MysqlToGo) SetDsn(dsn string, options ...interface{}) {
 }
 
 //connection to mysql
+func (mtg *MysqlToGo) GetDsn() string {
+	return mtg.Dsn
+}
+
+//connection to mysql
 func (mtg *MysqlToGo) Connect() error {
 	db, err := sql.Open("mysql", mtg.Dsn)
 	if err != nil {
