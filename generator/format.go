@@ -15,6 +15,7 @@ type PropertyFormat struct {
 	Size  string
 	Type  string
 	Index string
+	Default string
 }
 
 //`gorm:"column:beast_id"`
@@ -30,6 +31,7 @@ func init() {
 			Size:  "size(%d)",
 			Type:  "type(%s)",
 			Index: "%s",
+			Default: "",
 		},
 		AutoInfo: "\nimport \"github.com/astaxie/beego/orm\"\n\nfunc init(){\n\torm.RegisterModel(new({{modelName}}))\n}\n\n",
 	}
@@ -43,6 +45,7 @@ func init() {
 			Size:  "size:%d",
 			Type:  "type:%s",
 			Index: "",
+			Default: "default:%s",
 		},
 		TabFormat: "`gorm:\"column:%s;%s\" json:\"%s\"`",
 		//AutoInfo:  "\nimport (\n\t\"fmt\"\n)\n\n",
@@ -87,6 +90,10 @@ func (pf PropertyFormat) GetTypeFormat() string {
 	return pf.Type
 }
 
+func (pf PropertyFormat) GetDefaultFormat() string {
+	return pf.Default
+}
+
 var GormTpl = `
 func ({{entry}} *{{object}}) GetById(id string) {
 	Orm.Table({{entry}}.TableName()).First({{entry}}, {{entry}}.GetKey() + " = '"+id+"'")
@@ -100,12 +107,12 @@ func ({{entry}} *{{object}}) GetList(page,limit int64, condition string) (list [
 	return
 }
 
-func ({{entry}} *{{object}}) Create()  {
-	Orm.Model({{entry}}).Create({{entry}})
+func ({{entry}} *{{object}}) Create() []error {
+	return Orm.Model({{entry}}).Create({{entry}}).GetErrors()
 }
 
-func ({{entry}} *{{object}}) Update(info UserInfo)  {
-	Orm.Model({{entry}}).UpdateColumns(info)
+func ({{entry}} *{{object}}) Update(info UserInfo) []error  {
+	return Orm.Model({{entry}}).UpdateColumns(info).GetErrors()
 }
 
 func ({{entry}} *{{object}}) Delete()  {

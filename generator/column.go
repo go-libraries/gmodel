@@ -16,6 +16,7 @@ type Column struct {
 	NumberPrecision int64
 	ColumnType      string
 	ColumnKey       string
+	Default         interface{}
 }
 
 func (c Column) GetTag(format Format) string {
@@ -79,21 +80,35 @@ func (c Column) getProperty(format Format) string {
 		size = c.NumberPrecision
 	}
 
-	szFormat := pf.GetSizeFormat()
-	if size > 0 {
-		if szFormat != "" {
-			value += fmt.Sprintf(szFormat, size)
-			value += ";"
-		}
-	}
-
+	useSize := true
 	tpFormat := pf.GetTypeFormat()
 	if tpFormat != "" {
 		//only support time type
-		if strings.Index(strings.ToLower(c.ColumnType), "time") > -1 {
-			value += fmt.Sprintf(tpFormat, c.ColumnType)
-			value += ";"
+		//if strings.Index(strings.ToLower(c.ColumnType), "time") > -1 {
+		value += fmt.Sprintf(tpFormat, c.ColumnType)
+		value += ";"
+		//}
+		if format.Framework == "gorm" {
+			useSize = false
 		}
+	}
+
+	if useSize {
+		szFormat := pf.GetSizeFormat()
+		if size > 0 {
+			if szFormat != "" {
+				value += fmt.Sprintf(szFormat, size)
+				value += ";"
+			}
+		}
+	}
+
+	defaultF := pf.GetDefaultFormat()
+	if defaultF != "" {
+		if c.IsPrimaryKey() {
+			return value
+		}
+		value += formatDefault(c.Default, defaultF, c.IsAllowEmpty())
 	}
 
 	return value
@@ -101,4 +116,28 @@ func (c Column) getProperty(format Format) string {
 
 func (c Column) IsPrimaryKey() bool {
 	return c.ColumnKey == "PRI"
+}
+
+func (c Column) IsAllowEmpty() bool {
+	return c.Nullable == "YES"
+}
+
+func formatDefault(v interface{}, format string, allowedNull bool) (value string) {
+	if v != nil {
+		str := string(v.([]byte))
+		strLow := strings.ToLower(str)
+		if strLow != "current_timestamp" {
+			str = "'" + str + "'"
+		}
+		value += fmt.Sprintf(format, str)
+		value += ";"
+	} else {
+
+		if allowedNull {
+			value += fmt.Sprintf(format, "null")
+			value += ";"
+		}
+	}
+
+	return
 }
