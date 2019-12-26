@@ -45,7 +45,7 @@ func init() {
 			Index: "",
 		},
 		TabFormat: "`gorm:\"column:%s;%s\" json:\"%s\"`",
-		AutoInfo:  "\nimport (\n\t\"fmt\"\n)\n\n",
+		//AutoInfo:  "\nimport (\n\t\"fmt\"\n)\n\n",
 	}
 }
 
@@ -89,7 +89,7 @@ func (pf PropertyFormat) GetTypeFormat() string {
 
 var GormTpl = `
 func ({{entry}} *{{object}}) GetById(id string) {
-	Orm.Table({{entry}}.TableName()).First({{entry}}, fmt.Println({{entry}}.GetKey() +" = '%s'", id))
+	Orm.Table({{entry}}.TableName()).First({{entry}}, {{entry}}.GetKey() + " = '"+id+"'")
 }
 
 func ({{entry}} *{{object}}) GetList(page,limit int64, condition string) (list []*{{object}}) {
