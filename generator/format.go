@@ -96,7 +96,16 @@ func (pf PropertyFormat) GetDefaultFormat() string {
 
 var GormTpl = `
 func ({{entry}} *{{object}}) GetById(id string) {
-	Orm.Table({{entry}}.TableName()).First({{entry}}, {{entry}}.GetKey() + " = '"+id+"'")
+	Orm.Model({{entry}}).First({{entry}}, {{entry}}.GetKey() + " = '"+id+"'")
+}
+
+
+func ({{entry}} *{{object}}) GetOne(condition string) (err []error) {
+	err = Orm.Model({{entry}}).First(userInfo, condition).GetErrors()
+	if len(err) > 0 {
+		return err
+	}
+	return
 }
 
 func ({{entry}} *{{object}}) GetList(page,limit int64, condition string) (list []*{{object}}) {
