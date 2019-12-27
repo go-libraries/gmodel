@@ -26,6 +26,9 @@
 1. 增加gorm curd方法
 2. 增加orm自动初始化模板并支持orm
 
+2019-12-26
+
+1. 增加gorm default
 
 # 快速入门
 
