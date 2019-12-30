@@ -108,7 +108,7 @@ func ({{entry}} *{{object}}) GetOne(condition string) (err []error) {
 	return
 }
 
-func ({{entry}} *{{object}}) GetList(page,limit int64, condition string) (list []*{{object}}) {
+func ({{entry}} *{{object}}) GetList(page,limit int64, condition interface{}) (list []*{{object}}) {
 	err := Orm.Model({{entry}}).Limit(limit).Offset((page-1) * limit).Find(list, condition).GetErrors()
 	if err != nil {
 		return nil
