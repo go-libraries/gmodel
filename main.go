@@ -3,7 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/go-libraries/gmodel/generator"
+	"github.com/go-libraries/genModels"
 	"os"
 )
 
@@ -40,7 +40,7 @@ func main() {
 		flag.Usage()
 	}
 	flag.Usage = usage
-	generator.GetDriver(modelPath, driver, dsn, style, packageName).Run()
+	genModels.GetDriver(modelPath, driver, dsn, style, packageName).Run()
 }
 
 func usage() {
